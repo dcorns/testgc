@@ -1,0 +1,79 @@
+<% layout("layout.ejs") -%>
+
+ <div class="container">
+ 	<div class="row">
+    	<div class="col-lg-6">
+
+        <% if(message.length > 0) { %>
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <%- message %>
+            </div>
+        <% } %>
+
+    		<% for (var i = 0; i < foundCart.items.length; i++) { %> <!-- refers to cart in main.js -->
+    			<div class="list-group">
+    				<span class="list-group-item">
+    				    <div class="row">
+                            <div class="col-md-3">
+                                <span><img src="<%= foundCart.items[i].item.image %>" class="product-image"></span>
+                                <!-- once we populate the items/item in main (from the object id reference in item in the cartSchema), we can then render it in the ejs file||do the same with category -->
+                            </div>
+
+                            <div class="col-md-6">
+                                <p class="list-group-item-heading"><%= foundCart.items[i].item.name %></ p>
+                            </div>
+
+                            <div class="col-md-3">
+                                <p><%= foundCart.items[i].quantity %></ p>
+                                <p><%= foundCart.items[i].price %></ p>
+
+                                <form method="post" action="/remove">
+                                    <input type="hidden" name="item" value="<%= foundCart.items[i]._id %>"></input>
+                                    <input type="hidden" name="price" value="<%= foundCart.items[i].price %>"></input>
+                                    <button type="submit" type="button" class="btn btn-primary">Remove</button>
+
+                                </form>
+                            </div>
+                        </div>
+                    </span>
+    			</div>
+    		<% } %>
+       	</div>
+       	
+        <div class="col-md-2">
+            <div class="list-group">
+                <span class="list-group-item">
+                    <h4>Total: $<span class="totalPrice"><%= foundCart.total %></span></h4>
+                    <div class="form-group">
+                        <input type="hidden" value="<%= foundCart.total %>"></input>
+<!-- SIMPLE STRIPE CHECKOUT FORM BEGINS-->
+                        <form action="/charge" method="POST" role="form" id="payment-form">
+                          <script
+                            src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+                            data-key="pk_test_J0oOJheOAa9Khxw5koG288mB"
+                            data-image="/foot.ico"
+                            data-name="Game Camel"
+                            data-description=""
+                            data-amount="100"
+                            data-locale="auto">
+                          </script>
+                        </form>
+<!-- SIMPLE STRIPE CHECKOUT FORM ENDS--> 
+                    </div>    
+                </span>
+            </div>
+        </div>
+    </div>
+
+<!-- Spinner div begins--> 
+    <div class="row">
+        <div class="col-lg-2 col-md-offset-6">
+            <div class="text-center" id="loading">
+            </div>
+        </div>
+    </div>
+<!-- Spinner div ends--> 
+ </div>
