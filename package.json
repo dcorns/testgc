@@ -21,6 +21,7 @@
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.14.2",
     "connect-mongo": "^1.1.0",
+    "connect-redis": "^3.0.2",
     "cookie-parser": "^1.4.1",
     "crypto": "0.0.3",
     "ejs": "^2.3.4",
@@ -29,13 +30,16 @@
     "express-flash": "0.0.2",
     "express-session": "^1.13.0",
     "faker": "^3.0.1",
+    "http": "0.0.0",
     "mongoosastic": "^3.6.0",
     "mongoose": "^4.3.6",
     "morgan": "^1.6.1",
     "passport": "^0.3.2",
     "passport-facebook": "^2.1.0",
+    "passport-google-oauth2": "^0.1.6",
     "passport-local": "^1.0.0",
     "passport-twitter": "^1.0.4",
-    "stripe": "^4.3.0"
+    "stripe": "^4.3.0",
+    "util": "^0.10.3"
   }
 }

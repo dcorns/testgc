@@ -27,11 +27,26 @@
 
           <% if(!user) { %>
 
-          <li><a class="dropdown-toggle" data-toggle="dropdown" href="#">Signup / Login</a>
+          <li><a class="dropdown-toggle" data-toggle="dropdown" href="#">sign in</a>
             <ul class="dropdown-menu">
-              <li><a href="/signup">Signup</a></li>
-              <li><a href="/login">Login</a></li>
+              <li>
+                <a href="/auth/facebook">
+                  Sign in with Facebook
+                </a>
+              </li>
+              
+              <li>
+                <a href="/auth/google">
+                  Sign in with Google 
+                </a>
+              </li>
+
             </ul>
+          </li>
+
+          <li><a href="/login">SIGN IN</a>
+
+
           </li>
 
           <% } else { %>

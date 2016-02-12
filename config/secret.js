@@ -15,15 +15,7 @@ module.exports = { //this line exports this information to the rest of the appli
 	clientID: process.env.GOOGLE_ID || "776638304286-kgdhve4sjcbc72ff37c235uuoc2g6u5f.apps.googleusercontent.com",
 	clientSecret: process.env.GOOGLE_SECRET || "EbmP7CSqY5idobDQ-a1fDrLN",
 	profileFields: ["emails", "displayName"],
-	returnURL: "http://localhost:3000/auth/google/return"
-
-	},
-
-	twitter: {
-		consumerKey: process.env.TWITTER_CONSUMER_KEY || "rwGHAFO4pfGe4OoJpnYewnv0y",
-		consumerSecret: process.env.TWITTER_CONSUMER_SECRET || "YKkGmoEP7boOsqOAt7PJDBF98KQ7RkklcohKXQbxqfemIrqlsa",
-		profileFields: ["emails", "displayName"],
-		callbackURL: "http://127.0.0.1:3000/auth/twitter/callback"
-
+	callbackURL: "http://localhost:3000/auth/google/callback"
+    
 	}
 }

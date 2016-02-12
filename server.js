@@ -14,6 +14,7 @@ var cookieParser = require("cookie-parser");//parses the cookie header and handl
 var flash = require("express-flash");
 //the connectmongo library is the database for storing the session
 var mongoStore = require("connect-mongo/es5")(expressSession);//we pass the session id to the mongo store and specify we use ES5
+var RedisStore = require( 'connect-redis' )(expressSession);
 //mongostore depends on the express session. and instead of saving the session into a temp memory store, we want to
 //save the session into the mongo db.
 var passport = require("passport");//support local login, as well we fb, twitter, linkedin, etc.
@@ -73,6 +74,17 @@ app.use(function(req, res, next) {
 		next();
 	});
 });
+app.use( expressSession({ 
+  secret: 'cookie_secret',
+  name:   'kaas',
+  store:  new RedisStore({
+    host: '127.0.0.1',
+    port: 6379
+  }),
+  proxy:  true,
+    resave: true,
+    saveUninitialized: true
+}));
 app.engine("ejs", ejsmate);//shows what kind of engine we want to use. in this case - we want to use ejs-mate
 app.set("view engine", "ejs");//set the engine to whatever engine we want. 
 //now we have to create a folder called views to use ejs properly.

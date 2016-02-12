@@ -49,62 +49,6 @@ router.get("/profile", passportConfig.isAuthenticated, function(req, res, next) 
 		});
 });
 
-router.get("/signup", function(req, res, next) { //next here is a callback
-	res.render("accounts/signup.ejs", {
-		errors: req.flash("errors") //here we specify the errors object
-	});
-});
-
-router.post("/signup", function(req, res, next) { //next here is a callback
-	async.waterfall([
-		//we first create a new user as a callback function.
-		function(callback) {
-			var user = new User(); //we create a new instance of the User object, which is extracted from the userSchema
-
-			user.profile.name =  req.body.name; //req.body.name comes from the name field in postman
-			//on the other hand - user.profile.name is based off the userSchema in user.js
-			user.password = req.body.password; //same - the password field is specified in postman
-			user.email = req.body.email;
-			user.profile.picture = user.gravatar();//once the user has signed up he will receive a picture
-
-			//we look for an existing user while creating the new user
-			User.findOne ({ email: req.body.email }, function(e, existingUser) {//a mongoose method to find one document in the mongoose database.
-				if (existingUser) {
-					req.flash("errors", "Account with this email address already exists!");
-					// res.json("User " + req.body.email + " already exists!");
-					return res.redirect("/signup");
-				} else {
-					user.save(function(e, user) { //lastly - we save the user object to the database, and add validation.
-						if (e) {
-							return next(e);
-						}
-						//we need to assign the new user a cart id
-						callback(null, user);//we save the user and call the section function while passing the user on.				
-					});
-				}
-			});
-		},
-		function(user) {
-			//we create a new cart object and store the user id in cart owner.
-			var cart = new Cart();
-			cart.owner = user._id;
-			cart.save(function(e) {
-				if (e) return next (e);
-				//then we log the cart with the server so that the user will have a session and cookies with the browser
-				req.logIn(user, function (e) { //if i signup correctly i will be taken to a profile page.
-				//this code is adding the session to the server and the cookie to the browser, upon signup, by using
-				//the logIn function.
-				//the user in line 63 is based upon the user we created in line 53 and will have the same sessionid and cookie	
-					if (e) {
-						return next(e);
-					}
-					res.redirect("/profile");//we send the user back to the profile page.
-				});
-			});
-		}
-	]);
-});
-
 router.get("/logout", function(req, res, next) { //logout our user and redirect to home page.
 	req.logout();
 	res.redirect("/");
@@ -148,23 +92,14 @@ router.get("/auth/facebook/callback", passport.authenticate("facebook", {
 	failureRedirect: "/login"//login route is the failure route.
 }));
 
-//twitter auth route to authenticate with twitter login
-//we didn't give our auth middleware any name in passport.js, but we call it twitter here anyway.
-router.get("/auth/twitter", passport.authenticate("twitter", { scope: "email" }));
-
-//twitter callback auth route right after twitter has authenticated our login
-router.get("/auth/twitter/callback", passport.authenticate("twitter", {
-	successRedirect: "/profile", //if fb has authenticated the user - we riderct them to profile.
-	failureRedirect: "/login"//login route is the failure route.
+//google auth route to authenticate with google login
+//we didn't give our auth middleware any name in passport.js, but we call it google here anyway.
+router.get('/auth/google', passport.authenticate('google', { scope: ['email'] 
 }));
 
-//google auth route to authenticate with twitter login
-//we didn't give our auth middleware any name in passport.js, but we call it google here anyway.
-router.get("/auth/google", passport.authenticate("google", { scope: "email" }));
-
 //google callback auth route right after google has authenticated our login
-router.get("/auth/google/return", passport.authenticate("google", {
-	successRedirect: "/profile", //if fb has authenticated the user - we riderct them to profile.
+router.get("/auth/google/callback", passport.authenticate("google", {
+	successRedirect: "/profile", //if goog has authenticated the user - we riderct them to profile.
 	failureRedirect: "/login"//login route is the failure route.
 }));
 

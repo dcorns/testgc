@@ -11,7 +11,7 @@ var userSchema = new Schema({
 	email: {type: String, unique: true, lowercase: true},
 	password: {type: String},
 	facebook: {type: String}, //we add to accomodate facebook oauth
-	twitter: {type: String}, //we add to accomodate twitter oauth
+	google: {type: String}, //we add to accomodate google oauth
 	tokens: Array, //we add to accomodate facebook oauth
 	profile: {
 		name: {type: String, default: ""},

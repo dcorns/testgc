@@ -1,7 +1,7 @@
 <% layout("layout.ejs") -%>	
 <body>
 <div class="row">
-	<div class="col-lg-6 col-md-offset-3">
+	<div class="col-lg-3 col-md-offset-4">
 
 		<% if(message.length > 0) { %>
 			<div class="alert alert-danger alert-dismissible">
@@ -11,38 +11,14 @@
 				<%- message %>
 			</div>
 		<% } %>
-		<form method="post">
-			<h3>Game Camel login</h3><br>
-
-			<div class="form-group">
-				<label="name">Email: </label>
-				<input type="email" class="form-control" name="email">
-			</div>
-
-			<div class="form-group">
-				<label="name">Password: </label>
-				<input type="password" class="form-control" name="password">
-			</div>
-
-			<button type="submit" class="btn btn-success">Submit</button>
-
-			
-
-		</form>
+			<h3>Game Camel login</h3>
 
 			<br/ >
 			<!--facebook's button is rendered below-->
 			<a class="btn btn-block btn-social btn-facebook" href="/auth/facebook">
 				<i class="fa fa-facebook"></i> Sign in with Facebook 
 			</a>
-
-			<br/ >
-			<!--twitter's button is rendered below-->
-			<a class="btn btn-block btn-social btn-twitter" href="/auth/twitter">
-				<i class="fa fa-twitter"></i> Sign in with Twitter 
-			</a>
-
-			<br/ >
+			
 			<!--google's button is rendered below-->
 			<a class="btn btn-block btn-social btn-google" href="/auth/google">
 				<i class="fa fa-google"></i> Sign in with Google 

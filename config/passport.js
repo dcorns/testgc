@@ -3,8 +3,7 @@ var passport = require("passport");//support local login, as well we fb, twitter
 var async = require("async");//require async processing.
 var localStrategy = require("passport-local").Strategy;//supports local login in particular.
 var facebookStrategy = require("passport-facebook").Strategy;//suports facebook oauth login
-var twitterStrategy = require("passport-twitter").Strategy;//suports facebook oauth login
-var googleStrategy = require("passport-google").Strategy;
+var googleStrategy = require("passport-google-oauth2").Strategy;
 
 var secret = require("../config/secret.js");//we require the secret file to access the information facebook provides for us.
 var User = require("../models/user.js"); //we require the User object from the user.js file
@@ -89,58 +88,23 @@ passport.use(new facebookStrategy(secret.facebook, function (token, refreshToken
 	});
 }));
 
-//middleware to process the twitter login mechanism
-passport.use(new twitterStrategy(secret.twitter, function(token, tokenSecret, profile, cb) {
-    User.findOne({ twitter: profile.id }, function (e, user) {
-		if (e) return cb(e); //if error, return it
-		if (user) {
-			return cb (null, user);//if we find a user, return the user and pass the user object to the routes
-		} else {
-			async.waterfall([//first we will create a new fb user and second we will pass this fb user's id to create a new cart.
-				function(callback) {
-					var newUser = new User(); //if we don't find a user, we want to create a new user.
-						newUser.email = profile._json.email;
-						newUser.twitter = profile.id;
-						newUser.tokens.push({ kind: "twitter", token: token });
-						newUser.profile.name = profile.displayName;
-						// newUser.profile.picture = "https://twitter.com/" + profile.id + "/profile_image?size=original";
-						//https://twitter.com/users/profile_pic?user_id=123
-						//https://twitter.com/[screen_name]/profile_image?size=original
-
-						newUser.save(function(e) {
-							if(e) throw e;
-							callback(e, newUser);//we pass the newly created user id to the second function below.
-							// return done (null, newUser); - part of the old fb middleware when we didn't have to update for cart creation
-						});
-				}, 
-				function(newUser) { //we have passed in the newUser from the above function - closure
-					var cart = new Cart();//we create a new cart object
-					cart.owner = newUser._id;//we pass the fb new user id as the new cart owner's id.
-					cart.save(function(e) {//we save the cart
-						if (e) return cb (e);
-						return cb (e, newUser);//we call with the newUser so the middleware can authenticate and redurect the new user to the appropriate route.
-					});
-				}
-			]);
-		}
-	});
-}));
-
 //middleware to process the google login mechanism
 passport.use(new googleStrategy(secret.google, function(token, tokenSecret, profile, cb) {
-    User.findOne({ twitter: profile.id }, function (e, user) {
+    User.findOne({ google: profile.id }, function (e, user) {
 		if (e) return cb(e); //if error, return it
 		if (user) {
+			profile.identifier=profile.id;
 			return cb (null, user);//if we find a user, return the user and pass the user object to the routes
+			console.log(user);
 		} else {
 			async.waterfall([//first we will create a new fb user and second we will pass this fb user's id to create a new cart.
 				function(callback) {
 					var newUser = new User(); //if we don't find a user, we want to create a new user.
-						newUser.email = profile._json.email;
+						newUser.email = profile.email;
 						newUser.google = profile.id;
 						newUser.tokens.push({ kind: "google", token: token });
 						newUser.profile.name = profile.displayName;
-						// newUser.profile.picture = "https://twitter.com/" + profile.id + "/profile_image?size=original";
+						newUser.profile.picture = profile.picture;
 						
 						newUser.save(function(e) {
 							if(e) throw e;
@@ -160,6 +124,7 @@ passport.use(new googleStrategy(secret.google, function(token, tokenSecret, prof
 		}
 	});
 }));
+
 
 //custom function to determine if user is logged in
 exports.isAuthenticated = function(req, res, next) {
