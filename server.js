@@ -22,6 +22,7 @@ var passport = require("passport");//support local login, as well we fb, twitter
 var secret = require("./config/secret.js"); //we require the object from the secret.js file
 var User = require("./models/user.js"); //we require the User object from the user.js file
 var Category = require("./models/category.js"); //require the category file
+var Game = require("./models/game.js"); 
 var mainRoutes = require("./routes/main.js"); //we require the main.js file
 var userRoutes = require("./routes/user.js");//we require the main.js file
 var adminRoutes = require("./routes/admin.js");//we require the admin file.
