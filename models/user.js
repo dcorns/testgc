@@ -12,15 +12,23 @@ var userSchema = new Schema({
 	password: {type: String},
 	facebook: {type: String}, //we add to accomodate facebook oauth
 	google: {type: String}, //we add to accomodate google oauth
+	amazon: {type: String}, //we add to accomodate amazon oauth
 	tokens: Array, //we add to accomodate facebook oauth
 	profile: {
 		name: {type: String, default: ""},
 		picture: {type: String, default: ""}
 	},
 	address: {type: String},
-	history: [{ //the history of the behavior and trnasactions of the user
+	currentTrades: [{ //the history of the behavior and transactions of the user
+		datePosted: {type: Date},
+		game: {type: Schema.Types.ObjectId, ref: "Game"},
+		quantity: {type: Number}
+	}],
+	priorTrades: [{ //the history of the behavior and transactions of the user
+		dateClosed: {type: Date},
 		paid: {type: Number, default: 0},
-		item: {type: Schema.Types.ObjectId, ref: "Product"}
+		item: {type: Schema.Types.ObjectId, ref: "Product"},
+		// game: {type: Schema.Types.ObjectId, ref: "Game"}
 	}]
 });
 

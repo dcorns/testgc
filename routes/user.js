@@ -3,6 +3,7 @@ var router = require("express").Router();//we are using a Router method which is
 var User = require("../models/user.js"); //we require the User object from the user.js file
 var Cart = require("../models/cart.js");
 var Game = require("../models/game.js");
+
 var async = require("async");//we need async to assign each user a cart number upon user signup.
 var passport = require("passport");//require the passport library because we will use one of its built-in functions
 var passportConfig = require("../config/passport.js"); //we require the passport.js file
@@ -29,21 +30,9 @@ router.post("/login", passport.authenticate("local-login", { //we use the same n
 
 //retrieve the user's profile together with their purchase history
 router.get("/profile", passportConfig.isAuthenticated, function(req, res, next) {
-	// res.json(req.user);//this would display the profile of the user, this is a get route.
-	//OLD CODE BEGINS!!
-	// User.findOne({ _id: req.user._id }, function(e, user) {//check if the userid exists in the db
-	// 	if(e) {
-	// 		return next(e);
-	// 	}
-	// 	res.render("accounts/profile.ejs", { user: user });//this would display the full page with an additional
-	// 	//parameter which is the user object
-	// });
-	//OLD CODE ENDS!!
-	//at the top, in the new code, we add passportConfig.isAuthenticated. in this case, if the user is not authenticated and types in
-	//the /profile address in the url bar, the user will be redirected to a login page, per the middleware code in passport.js
 	User
 		.findOne({ _id: req.user._id })
-		.populate("history.item")
+		.populate("currentTrades.game")
 		.exec(function(e, user) {
 			if (e) return next (e);
 			res.render("accounts/profile", { user: user });
@@ -78,52 +67,56 @@ router.post("/edit-profile", function(req, res, next) {
 				return next (e);
 			}
 			req.flash("success", "You have successfully edited your profile!");
-			return res.redirect("/edit-profile");
+			return res.redirect("/edit-profile.ejs");
 		});
 	});
 });
-//---NICKS EXPERIMENTING ROUTES BEGIN
-router.post("/game-entry", function(req, res, next) { //next here is a callback
-	async.waterfall([//learm from 3 step async waterfall in stripe in routes/main.js
-		//we first create a new user as a callback function.
+
+router.post("/game-entry", passportConfig.isAuthenticated, function(req, res, next) { //next here is a callback
+	async.waterfall([
 		function(firstcallback) {
 			var game = new Game();
 
 			game.name =  req.body.gamename;
-			game.condition =  req.body.gamecondition;
 			game.pricePaid =  req.body.pricepaid;
 			game.language =  req.body.gamelanguage;
 			game.yearPublished =  req.body.yearpublished;
 			game.genre =  req.body.gamegenre;
 			game.image = req.body.gameimage;
-
+			game.owner = req.user._id;
+			game.postingData.push({
+				datePosted: req.body.dateposted,//one by one we push the items from the cart to the user's history
+				quantity: req.body.gamequantity//one by one we push the prices from the cart to the user's history
+			});
+			game.save();
 			firstcallback (null,game);
 		},
-		function(game) {
-			User.findOne ({ _id: req.user._id }, function(e, existingUser) {//a mongoose method to find one document in the mongoose database.
-				if (!existingUser) {
+		function(game) { //we pass the cart object to the second callback function
+			User.findOne ({ _id: req.user._id }, function(e, user) {//a mongoose method to find one document in the mongoose database.
+				if (!user) {
 					req.flash("errors", "Please login to enter your games for consideration!");
-					// res.json("User " + req.body.email + " already exists!");
 					return res.redirect("/login");
 				}
-				game.owner = existingUser._id;
-				game.save(function(e) {
-				if (e) return next (e);
-				res.redirect("/profile");//we send the user back to the profile page.
+				if (user) {
+					for (var i = 0; i < game.postingData.length; i++) {
+						user.currentTrades.push({
+							datePosted: game.postingData[i].datePosted,
+							quantity: game.postingData[i].quantity
+						});
+					}
+				user.save(function(e) {
+					if (e) return next (e);							
+					res.redirect("/profile");
 				});
-			});
-		}
+				}
+			});	
+		}		
 	]);
 });
 
 router.get("/game-entry", function(req, res, next) {//we get the login data via the serialize-deserialize method in passport.js
 	res.render("accounts/game-entry.ejs");
 });
-
-
-//---NICKS EXPERIMENTING ROUTES END
-
-
 
 //facebook auth route to authenticate with facebook login
 //we didn't give our auth middleware any name in passport.js, but we call it facebook here anyway.

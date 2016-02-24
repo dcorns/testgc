@@ -17,7 +17,7 @@
 
         <ul class="nav navbar-nav nav navbar-right">
           
-          <li><a class="dropdown-toggle" data-toggle="dropdown" href="#">Game Categories</a>
+          <li><a class="dropdown-toggle" data-toggle="dropdown" href="#">board game genres</a>
             <ul class="dropdown-menu">
               <% for (var i = 0; i < categories.length; i++) { %>
                 <li><a href="/products/<%= categories[i]._id %>"><%= categories[i].name %></a></li>
@@ -25,28 +25,26 @@
             </ul>
           </li>          
 
-          <% if(!user) { %>
-
-          <li><a class="dropdown-toggle" data-toggle="dropdown" href="#">sign in</a>
+          <li><a class="dropdown-toggle" data-toggle="dropdown" href="#">nick's game genres</a>
             <ul class="dropdown-menu">
-              <li>
-                <a href="/auth/facebook">
-                  Sign in with Facebook
-                </a>
-              </li>
-              
+              <li><a href="/games/Strategy">strategy</a></li>
+              <li><a href="/games/Trivia">trivia</a></li>
+              <li><a href="/games/EconomicSimulation">economic simulation</a></li>
+              <li><a href="/games/MurderandMystery">murder and mystery</a></li>
+              <li><a href="/games/WordGames">word games</a></li>
               <li>
                 <a href="/auth/google">
-                  Sign in with Google 
+                  goog login
                 </a>
               </li>
 
             </ul>
           </li>
 
-          <li><a href="/login">SIGN IN</a>
+          <% if(!user) { %>
 
-
+          <li>
+            <a href="/login">sign in</a>
           </li>
 
           <% } else { %>
@@ -54,8 +52,10 @@
           <ul class="nav navbar-nav nav navbar-right">
           <li><a class="dropdown-toggle" data-toggle="dropdown" href="#"><%= user.profile.name %></a>
             <ul class="dropdown-menu">
-              <li><a href="/profile">Profile</a></li>
-              <li><a href="/logout">Logout</a></li>
+              <li><a href="/profile">profile</a></li>
+              <li><a href="/game-entry">enter your games to trade</a></li>
+              <li><a href="/games/<%= user._id %>">view the list with your games</a></li>
+              <li><a href="/logout">sign out</a></li>
             </ul>
           </li>
 

@@ -3,6 +3,7 @@
 <div class="container">
 	<div class="row">
 		<div class="col-sm-6 col-md-4">
+		<h3 class=text-center">my profile</h3>
 
 			<img class="img-circle img-responsive img-center" src="<%= user.profile.picture %>" alt="">
 			<br />
@@ -16,11 +17,31 @@
 			<p>Address: <%= user.address %></p>
 			<% } %>
 
-			<a href="/edit-profile" class="btn btn-primary btn-lg">Edit Profile</a>
+			<a href="/edit-profile" class="btn btn-primary">Edit Profile</a>
 		</div>
 
-		<div class="col-md-6">
-			<h2 class=text-center">Purchase History</h2>
+		<div class="col-md-4">
+			<h3 class=text-center">my games for trade</h3>
+			<table class="table table-striped sticky-header">
+				<thead>
+				<tr>
+					<th>Name of game:</th>
+					<th>Quantity to trade:</th>
+				</tr>
+				<tbody>
+		            <% for (var i = 0; i < user.currentTrades.length; i++) {%>
+			            <tr>
+			                <td><%= user.currentTrades[i]._id %></td>
+				            <td><%= user.currentTrades[i].quantity %></td>
+		            	</tr>
+		            <% } %>
+				</tbody>
+				</thead>
+			</table>
+		</div>
+
+		<div class="col-md-4">
+			<h3 class=text-center">trade history</h3>
 			<table class="table table-striped sticky-header">
 				<thead>
 				<tr>
@@ -28,15 +49,16 @@
 					<th>Price paid:</th>
 				</tr>
 				<tbody>
-					<% for (var i = 0; i < user.history.length; i++) {%>
+					<% for (var i = 0; i < user.priorTrades.length; i++) {%>
 			            <tr>
-			              <td><%= user.history[i]._id %></td>
-			              <td><%= user.history[i].paid %></td>
+			              <td><%= user.priorTrades[i]._id %></td>
+		              	  <td><%= user.priorTrades[i].pricepaid %></td>
 			            </tr>
 			         <% } %>
 				</tbody>
 				</thead>
 			</table>
 		</div>
+
 	</div>
 </div>

@@ -1,11 +1,13 @@
 //handles all main routes - home, search, cart, etc.
 var router = require("express").Router();//we are using a Router method which is native to express.
 var async = require("async");
+var passportConfig = require("../config/passport.js"); //we require the passport.js file
 var stripe = require("stripe")("sk_test_LUPjCp7bnDxK8FgEsgShU62D");//require a stripe payments library and your stripe test secret key
 
 var User = require("../models/user.js");
 var Product = require("../models/product.js");
 var Cart = require("../models/cart.js");
+var Game = require("../models/game.js");
 
 var stream = Product.synchronize(); //first we synchronize the prductSchema in the elastic replica data set
 var count = 0;
@@ -30,6 +32,22 @@ function paginate(req, res, next) { //we create a new paginate function to contr
 					});
 				});
 			});
+
+		// Game //we will use multiple mongoose methods below (find, skip, etc.)
+		// 	.find()//we string these methods, therefore there is no ; after each line
+		// 	.skip( perPage * dspage )//skips the number of documents needed to go the given page
+		// 	.limit( perPage ) //limits how many documents are displayed at any one time.
+		// 	.exec(function(e, tygames) {
+		// 		if (e) return next (e);
+		// 		Game.count().exec(function(e, qcount) { //.count is a mongoose method to count all docs, we need this
+		// 			//to divide the total number of docs by the perPage docs.
+		// 			if (e) return next (e);
+		// 			res.render("main/games.ejs", {
+		// 				games: tygames,
+		// 				pages: qcount / perPage
+		// 			});
+		// 		});
+		// 	});	
 }
 
 //we will connect the product db to elastic search.
@@ -68,7 +86,6 @@ router.get("/cart", function(req, res, next) {
 			});
 		});
 });
-
 
 //post items to the cart each time you want to buy a product
 router.post("/product/:product_id", function(req, res, next) {
@@ -167,15 +184,131 @@ router.get("/products/:id", function(req, res, next) {//colon parameter is used 
 		});
 });
 
+//render the summary games page
+router.get("/games/:id", passportConfig.isAuthenticated, function(req, res, next) {//colon parameter is used when you want to go to a dynamic specific param.
+//so products/:id is the same as (products/books_id, products/foods_id, products/wines_id, etc.)	
+	Game
+		.find({ genre: req.params.id })//we are querying the category id from the productschema, the catid only accepts objectid, as we set it up
+		//in this case also req.params.id = /:id in the url
+		//the rest of the data from each category object, based on the category id, and present the full object on our category page.
+		.exec(function(e, games) {//we execute a function to return all products in a given category object.
+			if(e) return next(e); //if error, return callback with an error
+			res.render("main/games.ejs", {
+				games: games
+			});
+		});
+});
+
 //render each product page
 router.get("/product/:id", function(req, res, next) {
 	Product.findById({ _id: req.params.id }, function(e, product) {
 		if (e) return next (e);
-		res.render("main/product", {
+		res.render("main/product.ejs", {
 			product: product
 		});
 	});
 });
+
+//render each game page
+router.get("/gameunique/:id", function(req, res, next) {
+	async.waterfall([
+		function(firstcallback) {
+			User.findOne ({ _id: req.params.id }, function(e, user) {//a mongoose method to find one document in the mongoose database.
+				if (!user) {
+					req.flash("errors", "Please login to access the full site!");
+					return res.redirect("/login");
+				}
+			firstcallback (null,user);
+			console.log(user);
+			});	
+		},
+		function(user) { //we pass the cart object to the second callback function
+			Game.find ({ owner: req.user._id }, function(e, game) {//a mongoose method to find one document in the mongoose database.
+				if (!user) {
+					req.flash("errors", "Please login to access the full site!");
+					return res.redirect("/login");
+				}
+				if (e) return next (e);
+				console.log(game);
+					res.render("main/gameunique.ejs", {
+						game: game
+					});
+			});	
+		}		
+	]);
+
+	// Game.findById({ _id: req.params.id }, function(e, game) {
+	// 	if (e) return next (e);
+	// 	res.render("main/gameunique.ejs", {
+	// 		game: game
+	// 	});
+	// });
+});
+
+//Stripe route i created to accomodate checkout
+router.post("/charge", function(req, res, next) { //payment route in stripe
+	// var currentCharges = Math.round(req.body.stripeMoney * 100);//the total amount in each cart that is sent to stripe and * 100 beacuse it's in cents
+	var stripeToken = req.body.stripeToken;
+
+	var charge = stripe.charges.create({
+	  amount: 100, // amount in cents, again
+	  currency: "usd",
+	  source: stripeToken,
+	  description: "Example charge"
+	}, function(err, charge) {
+	  if (err && err.type === 'StripeCardError') {
+	    // The card has been declined
+	  }
+	}).then(function(charge) {
+		async.waterfall([
+			function(firstCallback) {
+				Cart.findOne({ owner: req.user._id}, function(e, cart) { //we search for the cart based on the logged user
+					firstCallback(e, cart);//we retrieve the cart in the executional context and pass it to the second function.
+				});
+			}, 
+			function(cart, secondCallback) { //we pass the cart object to the second callback function
+				User.findOne({ _id: req.user._id }, function(e, user) {
+					if (user) {
+						for (var i = 0; i < cart.items.length; i++) { //we loop through the cart items of that user
+							user.priorTrades.push({
+								item: cart.items[i].item,//one by one we push the items from the cart to the user's history
+								paid: cart.items[i].price//one by one we push the prices from the cart to the user's history
+							});
+						}
+						user.save(function(e, user) { //we save the updated user after we have looped through the cart and added each
+							//item in the cart to the users history list and the prices to the user total list
+							if (e) return next (e);
+							secondCallback(e, user);//we pass the updated user object via the second callback to the final function.
+						});
+					}
+				});
+			},
+			function(user) {//where is this last function executed? Something for you to look into!!
+				Cart.update({ owner: user._id }, { $set: { items: [], total: 0}}, function(e, updated) {//the cart will check the owner id and update itself to zero.
+				//.update is a built-in mongoose method; $set is another built in method to set the items to empty and the total to 0	
+					if(updated) {
+						res.redirect("/profile");
+					}
+				}); 
+			}
+		]);
+	});
+});
+
+module.exports = router;
+
+// //route i created to accomodate subscriptions - THIS CODE IS NOT WORKING
+// router.post("/subscribe", function(req, res, next) { //payment route in stripe
+// 	function(customer) {
+// 	return stripe.customers.create({
+// 	  source: token, // obtained with Stripe.js
+// 	  plan: "001",
+// 	  email: customer.email
+// 	}, function(err, customer) {
+// 	  // asynchronously called
+// 	});
+// 	res.redirect("/profile"); 
+// });
 
 // //ARASH's stripe payment api/route = WE ARE NOT USING THIS IN THE APP FOR NOW
 // router.post("/payment", function(req, res, next) { //payment route in stripe
@@ -225,70 +358,5 @@ router.get("/product/:id", function(req, res, next) {
 // 	});
 // });
 //ARASH's stripe payment api/route = WE ARE NOT USING THIS IN THE APP FOR NOW - END
-
-//Stripe route i created to accomodate checkout
-router.post("/charge", function(req, res, next) { //payment route in stripe
-	// var currentCharges = Math.round(req.body.stripeMoney * 100);//the total amount in each cart that is sent to stripe and * 100 beacuse it's in cents
-	var stripeToken = req.body.stripeToken;
-
-	var charge = stripe.charges.create({
-	  amount: 100, // amount in cents, again
-	  currency: "usd",
-	  source: stripeToken,
-	  description: "Example charge"
-	}, function(err, charge) {
-	  if (err && err.type === 'StripeCardError') {
-	    // The card has been declined
-	  }
-	}).then(function(charge) {
-		async.waterfall([
-			function(firstCallback) {
-				Cart.findOne({ owner: req.user._id}, function(e, cart) { //we search for the cart based on the logged user
-					firstCallback(e, cart);//we retrieve the cart in the executional context and pass it to the second function.
-				});
-			}, 
-			function(cart, secondCallback) { //we pass the cart object to the second callback function
-				User.findOne({ _id: req.user._id }, function(e, user) {
-					if (user) {
-						for (var i = 0; i < cart.items.length; i++) { //we loop through the cart items of that user
-							user.history.push({
-								item: cart.items[i].item,//one by one we push the items from the cart to the user's history
-								paid: cart.items[i].price//one by one we push the prices from the cart to the user's history
-							});
-						}
-						user.save(function(e, user) { //we save the updated user after we have looped through the cart and added each
-							//item in the cart to the users history list and the prices to the user total list
-							if (e) return next (e);
-							secondCallback(e, user);//we pass the updated user object via the second callback to the final function.
-						});
-					}
-				});
-			},
-			function(user) {//where is this last function executed? Something for you to look into!!
-				Cart.update({ owner: user._id }, { $set: { items: [], total: 0}}, function(e, updated) {//the cart will check the owner id and update itself to zero.
-				//.update is a built-in mongoose method; $set is another built in method to set the items to empty and the total to 0	
-					if(updated) {
-						res.redirect("/profile");
-					}
-				}); 
-			}
-		]);
-	});
-});
-// //route i created to accomodate subscriptions - THIS CODE IS NOT WORKING
-// router.post("/subscribe", function(req, res, next) { //payment route in stripe
-// 	function(customer) {
-// 	return stripe.customers.create({
-// 	  source: token, // obtained with Stripe.js
-// 	  plan: "001",
-// 	  email: customer.email
-// 	}, function(err, customer) {
-// 	  // asynchronously called
-// 	});
-// 	res.redirect("/profile"); 
-// });
-
-module.exports = router;
-
 
 

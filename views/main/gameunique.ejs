@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<% layout("layout.ejs") -%>
+
+ <div class="container">
+ 	<div class="row">
+    	<div class="col-md-4">
+    		<img src="<%= game.image %>">
+       	</div>
+
+        <div class="col-md-4">
+            
+        </div>
+
+        <div class="col-md-4">
+            <h3><%= game.name %></h3>
+            <h1>$<%= game.name %></h1>
+            <h1>$<%= game.name %></h1>
+
+            <form method="post">
+                <% if (user) { %>
+                    <button type="submit" class="btn btn-primary">$<%= user.name %></button>
+
+                <% } else { %>
+                    <a href="/login" class="btn btn-warning">Signup for a new user account</a>
+                <% } %>
+            </form>
+        </div>
+    </div>
+ </div>
+ </html>

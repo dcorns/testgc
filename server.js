@@ -29,7 +29,6 @@ var adminRoutes = require("./routes/admin.js");//we require the admin file.
 var apiRoutes = require("./api/api.js"); //require the api file. 
 var cartLength = require("./middleware/middleware.js"); //require the middleware file
 
-
 var app = express(); //make app an express function. and app refers to express objects.
 
 //we connect mongoose to the database; also create a user and mongodb deployment on mongolab.com:
@@ -65,6 +64,28 @@ app.use(function(req, res, next) {//give the user object to each route
 	res.locals.user = req.user; //locals is a local variable to each route
 	next();
 });
+app.use(function(req, res, next) {
+	User.find({}, function(e, users) {//we leave find{} because we want to find all users.
+		if (e) {
+			next(e);
+		}
+		res.locals.users = users; //store all users in the local variable called users.
+		next();
+	});
+});
+app.use(function(req, res, next) {//give the user object to each route
+	res.locals.game = req.game; //locals is a local variable to each route
+	next();
+});
+app.use(function(req, res, next) {
+	Game.find({}, function(e, games) {//we leave find{} because we want to find all users.
+		if (e) {
+			next(e);
+		}
+		res.locals.games = games; //store all users in the local variable called users.
+		next();
+	});
+});
 app.use(cartLength);//for each middleware file we require, we have to enable the app to use it by app.use
 app.use(function(req, res, next) {
 	Category.find({}, function(e, categories) {//we leave find{} because we want to find all categories.
@@ -87,16 +108,15 @@ app.use( expressSession({
     saveUninitialized: true
 }));
 app.engine("ejs", ejsmate);//shows what kind of engine we want to use. in this case - we want to use ejs-mate
-app.set("view engine", "ejs");//set the engine to whatever engine we want. 
+app.set("view engine", "ejs");//set the engine to whatever engine we want - in this case, our viewing engine is ejs 
 //now we have to create a folder called views to use ejs properly.
 app.use(mainRoutes);
 app.use(userRoutes);
 app.use(adminRoutes);
 app.use("/api", apiRoutes); //all apis in the router will be sub-urls of the api url name, so we don't have to type api each time.
 
-
 //--start the server on port 3000
 app.listen(secret.port, function(e) {
 	if(e) throw e;
-	console.log("Server is running on port " + secret.port + "!");
+	console.log("Ready captain... we're running on port " + secret.port + "!");
 });
