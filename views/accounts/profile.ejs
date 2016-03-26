@@ -2,7 +2,7 @@
 
 <div class="container">
 	<div class="row">
-		<div class="col-sm-6 col-md-4">
+		<div class="col-sm-6 col-md-3">
 		<h3 class=text-center">my profile</h3>
 
 			<img class="img-circle img-responsive img-center" src="<%= user.profile.picture %>" alt="">
@@ -20,19 +20,33 @@
 			<a href="/edit-profile" class="btn btn-primary">Edit Profile</a>
 		</div>
 
-		<div class="col-md-4">
+		<div class="col-md-5">
 			<h3 class=text-center">my games for trade</h3>
 			<table class="table table-striped sticky-header">
 				<thead>
 				<tr>
-					<th>Name of game:</th>
-					<th>Quantity to trade:</th>
+					<th>Name:</th>
+					<th>Genre:</th>
+					<th>Language:</th>
+					<th>Quantity:</th>
+					<th></th>
 				</tr>
 				<tbody>
 		            <% for (var i = 0; i < user.currentTrades.length; i++) {%>
 			            <tr>
-			                <td><%= user.currentTrades[i]._id %></td>
+			                <td><%= user.currentTrades[i].game.name %></td>
+				            <td><%= user.currentTrades[i].game.genre %></td>
+				            <td><%= user.currentTrades[i].game.language %></td>
 				            <td><%= user.currentTrades[i].quantity %></td>
+				            <td>
+				            	<form method="post" action="/delete">
+                                    <input type="hidden" name="gamnam" value="<%= user.currentTrades[i]._id %>"></input>
+                                    <input type="hidden" name="quant" value="<%= user.currentTrades[i].quantity %>"></input>
+                                    <input type="hidden" name="datt" value="<%= user.currentTrades[i].datePosted %>"></input>
+
+                                    <button type="submit" type="button" class="btn btn-primary">Remove</button>
+                                </form>
+				            </td>
 		            	</tr>
 		            <% } %>
 				</tbody>

@@ -32,11 +32,14 @@ router.post("/login", passport.authenticate("local-login", { //we use the same n
 router.get("/profile", passportConfig.isAuthenticated, function(req, res, next) {
 	User
 		.findOne({ _id: req.user._id })
-		.populate("currentTrades.game")
+		.populate({
+			path: "currentTrades.game"
+		})
 		.exec(function(e, user) {
 			if (e) return next (e);
 			res.render("accounts/profile", { user: user });
 		});
+
 });
 
 router.get("/logout", function(req, res, next) { //logout our user and redirect to home page.
@@ -77,20 +80,18 @@ router.post("/game-entry", passportConfig.isAuthenticated, function(req, res, ne
 		function(firstcallback) {
 			var game = new Game();
 
-			game.name =  req.body.gamename;
-			game.pricePaid =  req.body.pricepaid;
-			game.language =  req.body.gamelanguage;
-			game.yearPublished =  req.body.yearpublished;
-			game.genre =  req.body.gamegenre;
+			game.name = req.body.gamename;
+			game.language = req.body.gamelanguage;
+			game.genre = req.body.gamegenre;
 			game.image = req.body.gameimage;
-			game.owner = req.user._id;
 			game.postingData.push({
+				owner: req.user._id,
 				datePosted: req.body.dateposted,//one by one we push the items from the cart to the user's history
 				quantity: req.body.gamequantity//one by one we push the prices from the cart to the user's history
 			});
 			game.save();
 			firstcallback (null,game);
-		},
+		},	
 		function(game) { //we pass the cart object to the second callback function
 			User.findOne ({ _id: req.user._id }, function(e, user) {//a mongoose method to find one document in the mongoose database.
 				if (!user) {
@@ -99,16 +100,17 @@ router.post("/game-entry", passportConfig.isAuthenticated, function(req, res, ne
 				}
 				if (user) {
 					for (var i = 0; i < game.postingData.length; i++) {
-						user.currentTrades.push({
-							datePosted: game.postingData[i].datePosted,
-							quantity: game.postingData[i].quantity
-						});
+					user.currentTrades.push({
+						game: game._id,
+						datePosted: game.postingData[i].datePosted,
+						quantity: game.postingData[i].quantity
+					});
 					}
+				}
 				user.save(function(e) {
 					if (e) return next (e);							
 					res.redirect("/profile");
 				});
-				}
 			});	
 		}		
 	]);
@@ -116,6 +118,26 @@ router.post("/game-entry", passportConfig.isAuthenticated, function(req, res, ne
 
 router.get("/game-entry", function(req, res, next) {//we get the login data via the serialize-deserialize method in passport.js
 	res.render("accounts/game-entry.ejs");
+});
+
+// remove games from the list of games if you change your mind about trading a game
+router.post("/delete", function(req, res, next) {
+	Game.find({ "postingData.owner": req.user._id }, function(e, foundGame) {//we pull the id of the items, and then we pull the product we dont need
+		// foundGame.postingData.pull(String(req.body.gamnam));
+		// foundGame.save(function(e) {
+		// 	if (e) return next (e);
+		// 	req.flash("remove", "Successfully removed item");
+		// 	res.redirect("/profile");
+
+		// Game.update(
+		//   { _id: id },
+		//   { $pull: { 'contact.phone': { number: '+1786543589455' } } }
+		// );
+		// It will find document with the given _id and remove the phone +1786543589455 from its contact.phone array.
+
+		console.log(foundGame);	
+		});
+	// });
 });
 
 //facebook auth route to authenticate with facebook login
@@ -140,3 +162,5 @@ router.get("/auth/google/callback", passport.authenticate("google", {
 }));
 
 module.exports = router;
+
+

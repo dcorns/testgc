@@ -118,5 +118,5 @@ app.use("/api", apiRoutes); //all apis in the router will be sub-urls of the api
 //--start the server on port 3000
 app.listen(secret.port, function(e) {
 	if(e) throw e;
-	console.log("Ready captain... we're running on port " + secret.port + "!");
+	console.log("Ready, captain... we're running on port " + secret.port + "!");
 });
